@@ -58,4 +58,60 @@ fn main() {
         };
 
         // wall collision
-        if new_head.0 >=
+        if new_head.0 >= W || new_head.1 >= H {
+            break;
+        }
+
+        // self collision
+        if snake.iter().any(|&s| s == new_head) {
+            break;
+        }
+
+        snake.insert(0, new_head);
+
+        // eat food
+        if new_head == food {
+            food = ((rand() % W as u32) as usize, (rand() % H as u32) as usize);
+            while snake.contains(&food) {
+                food = ((rand() % W as u32) as usize, (rand() % H as u32) as usize);
+            }
+        } else {
+            snake.pop();
+        }
+
+        // render
+        let mut out = String::with_capacity((W + 20) * (H + 5));
+        out.push_str("\x1B[H");
+        out.push_str(&format!("  score: {}  [WASD/q]\n", snake.len() - 3));
+        out.push_str("┌");
+        out.extend(std::iter::repeat('─').take(W * 2));
+        out.push_str("┐\n");
+
+        for y in 0..H {
+            out.push('│');
+            for x in 0..W {
+                let pos = (x, y);
+                if pos == snake[0] {
+                    out.push_str("\x1B[1;32m██\x1B[0m");
+                } else if snake.contains(&pos) {
+                    out.push_str("\x1B[32m██\x1B[0m");
+                } else if pos == food {
+                    out.push_str("\x1B[1;31m██\x1B[0m");
+                } else {
+                    out.push_str("  ");
+                }
+            }
+            out.push_str("│\n");
+        }
+
+        out.push_str("└");
+        out.extend(std::iter::repeat('─').take(W * 2));
+        out.push_str("┘");
+        print!("{}", out);
+        io::stdout().flush().unwrap();
+        sleep(Duration::from_millis(120));
+    }
+
+    running.store(false, Ordering::Relaxed);
+    println!("\n\x1B[?25h  game over! score: {}", snake.len() - 3);
+}
